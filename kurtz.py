@@ -1,61 +1,52 @@
 from entorno import Palacio
+from agente import AgenteLogico # <--- Importamos la nueva clase
 import sys
 
+# ... (Mantén la función interpretar_perceptos igual que antes) ...
 def interpretar_perceptos(p):
-    """Traduce la lista de booleanos a texto legible."""
-    # p = [Brisa, Ronquido, Resplandor, ParN, ParE, ParS, ParW, Grito]
+    # (Código anterior de interpretar_perceptos)
     txt = []
-    if p[0]: txt.append("Sientes una BRISA fría.")
-    if p[1]: txt.append("Escuchas un RONQUIDO cercano.")
-    if p[2]: txt.append("Ves un RESPLANDOR.")
-    if p[7]: txt.append("¡Escuchas un GRITO de agonía!")
-    
-    walls = []
-    if p[3]: walls.append("Norte")
-    if p[4]: walls.append("Este")
-    if p[5]: walls.append("Sur")
-    if p[6]: walls.append("Oeste")
-    if walls: txt.append(f"Paredes en: {', '.join(walls)}")
-    
-    if not txt: return "Silencio absoluto..."
-    return " | ".join(txt)
+    if p[0]: txt.append("Brisa")
+    if p[1]: txt.append("Ronquido")
+    if p[2]: txt.append("Resplandor")
+    if p[7]: txt.append("Grito")
+    return ", ".join(txt) if txt else "Nada"
 
 def main():
-    print("--- BUSCANDO AL CORONEL KURTZ (Modo Manual) ---")
+    print("--- BUSCANDO AL CORONEL KURTZ (Modo Lógico) ---")
     juego = Palacio()
+    cerebro = AgenteLogico(juego.n) # <--- Inicializamos el cerebro
     
-    # Imprimir el mapa real para que puedas comprobar si los perceptos son ciertos
-    juego.imprimir_tablero_cheat()
+    # Cheat sheet para ti (opcional, para comparar)
+    # juego.imprimir_tablero_cheat() 
     
     jugando = True
     while jugando:
-        # 1. Obtener perceptos
+        # 1. Obtener perceptos reales
         perceptos = juego.obtener_perceptos()
         
-        # 2. Mostrar estado al usuario
-        print(f"\nPosición actual: {juego.pos_capitan}")
-        if juego.kurtz_encontrado:
-            print("** ¡KURTZ VA CONTIGO! Dirígete a la salida **")
-        print(f"PERCEPCIÓN: {interpretar_perceptos(perceptos)}")
+        # 2. El Agente RAZONA
+        cerebro.razonar(juego.pos_capitan, perceptos)
         
-        # 3. Pedir acción
-        accion = input("Acción (w/a/s/d moverse, e salir, q rendirse): ").lower().strip()
+        # 3. Mostrar la visión del Agente
+        cerebro.imprimir_mapa_mental(juego.pos_capitan)
         
-        if accion == 'q':
-            print("El Capitán Willard abandona la misión.")
-            break
+        print(f"Perceptos en {juego.pos_capitan}: {interpretar_perceptos(perceptos)}")
+        
+        # 4. Input usuario
+        accion = input("Acción (w/a/s/d, e, q): ").lower().strip()
+        
+        if accion == 'q': break
             
         if accion in ['w', 'a', 's', 'd', 'e']:
-            # 4. Ejecutar paso
             nuevos_perceptos, terminado, mensaje = juego.paso(accion)
-            
             if terminado:
                 print("\n" + "!"*30)
                 print(mensaje)
                 print("!"*30)
                 jugando = False
         else:
-            print("Acción no reconocida. Usa W, A, S, D para moverte.")
+            print("Acción inválida.")
 
 if __name__ == "__main__":
     main()
