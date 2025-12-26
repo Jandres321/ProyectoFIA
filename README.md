@@ -36,18 +36,18 @@ El proyecto está implementado en **Python 3**. Se ha intentado minimizar las de
 
 1.  Clonar el repositorio:
     ```bash
-    git clone [https://github.com/tu-usuario/buscando-a-kurtz.git](https://github.com/tu-usuario/buscando-a-kurtz.git)
-    cd buscando-a-kurtz
+    git clone [https://github.com/Jandres321/ProyectoFIA](https://github.com/Jandres321/ProyectoFIA)
+    cd ProyectoFIA
     ```
 
 2.  Instalar dependencias:
     ```bash
-    pip install numpy
-    # pip install -r requirements.txt (si se añaden más librerías)
+    pip install -r requirements.txt
     ```
 
 ## 🎮 Ejecución
 
-Para ejecutar el agente en el **Palacio** (Parte 1):
+Para ejecutar el proyecto:
 ```bash
 python kurtz.py
+```
