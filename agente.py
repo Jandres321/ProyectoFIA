@@ -25,6 +25,7 @@ class AgenteLogico:
         # Al principio, la salida podría estar en cualquier parte
         self.salida_posible = set((r, c) for r in range(size) for c in range(size))
         self.salida_segura = None 
+        self.tengo_a_kurtz = False # Nuevo estado interno del agente para visualización
 
     def razonar(self, posicion_actual, perceptos):
         """
@@ -115,55 +116,77 @@ class AgenteLogico:
         cand = [(r-1, c), (r+1, c), (r, c-1), (r, c+1)]
         return [(fr, fc) for fr, fc in cand if 0 <= fr < self.n and 0 <= fc < self.n]
 
-    def imprimir_mapa_mental(self, pos_capitan):
-        print("\n--- MAPA MENTAL (Deducción) ---")
-        print("Leyenda: CW=Tú, E!=Salida CONFIRMADA, P!=Pozo, S!=Soldado")
-        if self.ha_visto_luz:
-            print("(E? = Posible salida detectada por resplandor)")
+    def imprimir_mapa_mental(self, pos_capitan, tiene_kurtz):
+        self.tengo_a_kurtz = tiene_kurtz 
         
+        print("\n--- MAPA MENTAL (Deducción) ---")
+        
+        # --- LEYENDA ACTUALIZADA ---
+        print("LEYENDA:")
+        print("| [CW]: Tú | [CW+K]: Tú con Kurtz | [E!]: Salida Confirmada | [E?]: Salida Posible |")
+        print("| [P!]: Precipicio | [S!]: Soldado | [P?]/[S?]: Peligro Posible |")
+        print("| [B]: Brisa | [R]: Ronquido | [L]: Luz | [ok]: Seguro | [#]: Desconocido |")
+        print("-" * 60)
+
         for r in range(self.n):
             fila_str = ""
             for c in range(self.n):
                 pos = (r, c)
                 texto = " # "
                 
+                # 1. POSICIÓN DEL JUGADOR (Jerarquía máxima)
                 if pos == pos_capitan:
-                    texto = "CW"
+                    texto = "CW+K" if self.tengo_a_kurtz else "CW"
+                
+                # 2. OBJETIVOS CONFIRMADOS
                 elif self.salida_segura == pos: 
-                    texto = "E!" # Salida confirmada siempre se muestra
+                    texto = "E!" 
+
+                # 3. PELIGROS CONFIRMADOS (Deducidos)
                 elif pos in self.pozos_seguros:
                     texto = "P!"
                 elif pos in self.soldado_seguro:
                     texto = "S!"
-                # MODIFICACIÓN AQUÍ: Solo mostramos E? si hemos visto luz alguna vez
+
+                # 4. INCERTIDUMBRES (Si hemos visto luz, mostramos E?)
                 elif self.ha_visto_luz and pos in self.salida_posible:
+                    # Conflictos de información (¿Puede ser pozo y salida a la vez?)
                     if pos in self.pozos_posibles:
                         texto = "P/E?"
                     elif pos in self.soldado_posible:
                         texto = "S/E?"
                     else:
                         texto = "E?"
+                
+                # 5. SOSPECHAS DE PELIGRO
                 elif pos in self.pozos_posibles:
                     texto = "P?"
                 elif pos in self.soldado_posible:
                     texto = "S?"
+                
+                # 6. MEMORIA DE CASILLAS VISITADAS (Perceptos históricos)
                 elif pos in self.casillas_visitadas:
                     info = []
                     if pos in self.brisas: info.append("B")
                     if pos in self.ronquidos: info.append("R")
                     if pos in self.resplandores: info.append("L")
-                    if not info: info.append("ok")
-                    texto = "".join(info)
+                    
+                    if not info: 
+                        texto = "ok" # Sin perceptos, totalmente segura
+                    else:
+                        texto = "".join(info) # Ej: "BR" (Brisa y Ronquido)
+
+                # 7. CASILLAS DEDUCIDAS COMO SEGURAS (Pero no visitadas)
                 elif pos in self.casillas_seguras:
                     texto = "ok"
                 
                 fila_str += f"[{texto:^4}]"
             print(fila_str)
         
+        # Mensajes de estado debajo del mapa
         if self.salida_segura:
             print(f"-> ¡DEDUCCIÓN: La salida ESTÁ en {self.salida_segura}!")
         elif self.ha_visto_luz:
             print(f"-> Pista de Luz encontrada. Candidatos a Salida: {len(self.salida_posible)}")
-        else:
-            print("-> Aún no hay rastro de la salida (Busca Resplandor).")
+        
         print("------------------------------\n")

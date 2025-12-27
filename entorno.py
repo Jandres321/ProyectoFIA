@@ -124,30 +124,37 @@ class Palacio:
         elif accion == 's' and r < self.n - 1: nueva_r += 1
         elif accion == 'a' and c > 0: nueva_c -= 1
         elif accion == 'd' and c < self.n - 1: nueva_c += 1
+        # Lógica de SALIDA (e)
         elif accion == 'e':
-             # ... (Lógica de salida igual) ...
-             if self.pos_capitan == self.pos_salida:
-                # ...
-                self.juego_terminado = True
-                return self.obtener_perceptos(), True, "FIN"
-             return self.obtener_perceptos(), False, "Aquí no es la salida"
+            if self.pos_capitan == self.pos_salida:
+                if self.kurtz_encontrado:
+                    self.juego_terminado = True
+                    return self.obtener_perceptos(), True, "¡MISIÓN CUMPLIDA! Escapas del palacio con el Coronel Kurtz."
+                else:
+                    # El manual dice que si sales sin él, el estado se mantiene (no terminas, o es error)
+                    return self.obtener_perceptos(), False, "¡No puedes irte sin Kurtz! Búscalo primero."
+            else:
+                return self.obtener_perceptos(), False, "Aquí no hay ninguna salida."
 
+        # Actualizar posición
         self.pos_capitan = (nueva_r, nueva_c)
-        
-        # Verificar muerte
+        mensaje_turno = "Avanzas con cautela..." # Mensaje por defecto
+
+        # Verificar muerte (Precipicio/Soldado)
         if self.pos_capitan in self.pos_precipicios:
             self.juego_terminado = True
             self.mensaje_final = "MUERTE: Has caído en un precipicio."
-            
-        # MODIFICADO: Solo muere si el soldado NO está neutralizado
         elif self.pos_capitan == self.pos_soldado and not self.soldado_neutralizado:
             self.juego_terminado = True
             self.mensaje_final = "MUERTE: El soldado enemigo ha despertado."
 
-        if self.pos_capitan == self.pos_kurtz:
+        # --- LÓGICA DE RECOGER A KURTZ ---
+        # Si pisamos su celda y no lo teníamos, lo recogemos
+        if self.pos_capitan == self.pos_kurtz and not self.kurtz_encontrado:
             self.kurtz_encontrado = True
+            mensaje_turno = "¡HAS ENCONTRADO AL CORONEL KURTZ! Te sigue. ¡Corre a la salida!"
 
-        return self.obtener_perceptos(), self.juego_terminado, self.mensaje_final
+        return self.obtener_perceptos(), self.juego_terminado, (self.mensaje_final if self.juego_terminado else mensaje_turno)
 
     def imprimir_tablero_cheat(self):
         """Muestra el mapa completo (SOLO PARA DEBUG/EVALUACIÓN)"""
