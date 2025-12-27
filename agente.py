@@ -34,9 +34,19 @@ class AgenteLogico:
         
         tiene_brisa = perceptos[0]
         tiene_ronquido = perceptos[1]
+        escucha_grito = perceptos[7] # Índice 7 es el Grito
         
         adyacentes = self._obtener_adyacentes(r, c)
         
+        # --- LÓGICA DE GRITO ---
+        if escucha_grito:
+            # Si escuchamos un grito, el soldado ha muerto.
+            # Borramos todas las sospechas de soldado del mapa.
+            self.soldado_posible.clear()
+            self.soldado_seguro.clear()
+            # Nota: Como el soldado es único, al morir, sus casillas se vuelven seguras 
+            # (si no hay precipicio, claro).
+
         # --- LÓGICA DE PRECIPICIOS ---
         if tiene_brisa:
             self.brisas.add(posicion_actual)
@@ -52,16 +62,18 @@ class AgenteLogico:
                 # Nota: Saber que no es pozo no significa que sea transitable (podría ser soldado)
         
         # --- LÓGICA DEL SOLDADO ---
-        if tiene_ronquido:
+        # Solo procesamos ronquidos si NO acabamos de oír el grito (que implica muerte)
+        if tiene_ronquido and not escucha_grito:
             self.ronquidos.add(posicion_actual)
             for vecino in adyacentes:
                 if vecino not in self.casillas_seguras and vecino not in self.soldado_seguro:
                     self.soldado_posible.add(vecino)
-        else:
-            # Si NO hay ronquido, vecinos libres de soldado
+        elif not tiene_ronquido:
+            # Si no hay ronquido (o el soldado está muerto), limpiamos zona
             for vecino in adyacentes:
                 self.soldado_posible.discard(vecino)
                 self.soldado_seguro.discard(vecino)
+
 
         # --- MOTOR DE INFERENCIA (DEDUCCIÓN FUERTE) ---
         # Repasamos todas las brisas pasadas para ver si podemos confirmar algo

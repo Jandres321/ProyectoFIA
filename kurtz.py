@@ -34,12 +34,36 @@ def main():
         print(f"Perceptos en {juego.pos_capitan}: {interpretar_perceptos(perceptos)}")
         
         # 4. Input usuario
-        accion = input("Acción (w/a/s/d, e, q): ").lower().strip()
+        print("Controles: WASD (Mover), G (Granada), E (Salir), Q (Rendirse)")
+        accion_raw = input("Orden: ").lower().strip()
         
-        if accion == 'q': break
+        if accion_raw == 'q': break
+        
+        accion_final = None
+        
+        # Lógica de input para Granada
+        if accion_raw == 'g':
+            if juego.granada_usada:
+                print(">>> ¡Ya no te quedan granadas! <<<")
+                continue
+                
+            dir_granada = input("¿Hacia dónde lanzar? (w/a/s/d): ").lower().strip()
+            if dir_granada in ['w', 'a', 's', 'd']:
+                accion_final = 'g' + dir_granada # Ej: 'gw'
+            else:
+                print("Dirección inválida. Lanzamiento cancelado.")
+                continue
+        elif accion_raw in ['w', 'a', 's', 'd', 'e']:
+            accion_final = accion_raw
             
-        if accion in ['w', 'a', 's', 'd', 'e']:
-            nuevos_perceptos, terminado, mensaje = juego.paso(accion)
+        # Ejecutar paso
+        if accion_final:
+            nuevos_perceptos, terminado, mensaje = juego.paso(accion_final)
+            
+            # Feedback extra si lanzamos granada
+            if accion_final.startswith('g'):
+                print(f"\n>>> {mensaje} <<<\n")
+            
             if terminado:
                 print("\n" + "!"*30)
                 print(mensaje)
