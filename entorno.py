@@ -9,7 +9,7 @@ class Palacio:
         self.pos_soldado = None
         self.pos_kurtz = None
         self.pos_salida = None
-        self.pos_capitan = (0, 0) # Siempre empieza en (0,0) [cite: 34]
+        self.pos_capitan = (0, 0) # Siempre empieza en (0,0)
         
         # Estado del juego
         self.kurtz_encontrado = False
@@ -30,17 +30,17 @@ class Palacio:
         
         random.shuffle(todas_las_celdas)
         
-        # 1. Colocar 3 Precipicios [cite: 23]
+        # 1. Colocar 3 Precipicios
         self.pos_precipicios = [todas_las_celdas.pop() for _ in range(3)]
         
-        # 2. Colocar Soldado [cite: 24]
+        # 2. Colocar Soldado
         self.pos_soldado = todas_las_celdas.pop()
         
-        # 3. Colocar Coronel Kurtz (No puede estar en precipicio ni soldado) [cite: 32]
+        # 3. Colocar Coronel Kurtz (No puede estar en precipicio ni soldado)
         # Al usar .pop() de la lista barajada, garantizamos que no coinciden
         self.pos_kurtz = todas_las_celdas.pop()
         
-        # 4. Colocar Salida (Posición desconocida) [cite: 27]
+        # 4. Colocar Salida (Posición desconocida)
         self.pos_salida = todas_las_celdas.pop()
 
     def obtener_perceptos(self):
