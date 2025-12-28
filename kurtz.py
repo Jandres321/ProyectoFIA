@@ -1,5 +1,5 @@
 from entorno import Palacio
-from agente import AgenteLogico
+from agente import AgenteLogico, Colores
 import sys
 
 def interpretar_perceptos(p):
@@ -65,19 +65,22 @@ def main():
             nuevos_perceptos, terminado, mensaje = juego.paso(accion_final)
             print(f"\n>> {mensaje} <<\n") 
             
-            # --- LÓGICA DE FIN DE JUEGO CORREGIDA ---
+            # --- LÓGICA DE FIN DE JUEGO ---
             if terminado:
-                jugando = False # Importante: Detenemos el bucle while
+                jugando = False 
                 
                 if "MISIÓN CUMPLIDA" in mensaje:
-                    # Caso de Victoria
-                    print("       🌟 🚁 🌟       ")
-                    print("   VICTORIA TOTAL     ")
+                    # VICTORIA EN VERDE
+                    print(f"\n{Colores.VERDE_B}" + "🌟" * 15)
+                    print("     VICTORIA TOTAL     ")
+                    print(" Has rescatado a Kurtz  ")
+                    print("🌟" * 15 + f"{Colores.RESET}\n")
                 else:
-                    # Caso de Muerte (Precipicio o Soldado)
-                    print("       ☠️ GAME OVER ☠️       ")
-                    print("   El Capitán ha caído en combate...  ")
-                    print("--------------------------------------")
+                    # DERROTA EN ROJO SANGRE
+                    print(f"\n{Colores.ROJO_B}" + "☠️ " * 10)
+                    print("     GAME OVER      ")
+                    print(f"  {mensaje}  ")
+                    print("☠️ " * 10 + f"{Colores.RESET}\n")
         else:
             print("Acción inválida.")
 

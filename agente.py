@@ -1,5 +1,25 @@
 import numpy as np
 
+class Colores:
+    RESET = "\033[0m"
+    NEGRO = "\033[30m"
+    ROJO = "\033[31m"
+    VERDE = "\033[32m"
+    AMARILLO = "\033[33m"
+    AZUL = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    BLANCO = "\033[37m"
+    
+    # Variantes brillantes (Bold/Bright)
+    ROJO_B = "\033[1;31m"
+    VERDE_B = "\033[1;32m"
+    AMARILLO_B = "\033[1;33m"
+    AZUL_B = "\033[1;34m"
+    MAGENTA_B = "\033[1;35m"
+    CYAN_B = "\033[1;36m"
+    BLANCO_B = "\033[1;37m"
+
 class AgenteLogico:
     def __init__(self, size=6):
         self.n = size
@@ -123,9 +143,9 @@ class AgenteLogico:
         
         # --- LEYENDA ACTUALIZADA ---
         print("LEYENDA:")
-        print("| [CW]: Tú | [CW+K]: Tú con Kurtz | [E!]: Salida Confirmada | [E?]: Salida Posible |")
-        print("| [P!]: Precipicio | [S!]: Soldado | [P?]/[S?]: Peligro Posible |")
-        print("| [B]: Brisa | [R]: Ronquido | [L]: Luz | [ok]: Seguro | [#]: Desconocido |")
+        print(f"| {Colores.AZUL_B}[CW]{Colores.RESET}: Tú | {Colores.CYAN_B}[CW+K]{Colores.RESET}: Con Kurtz | {Colores.BLANCO_B}[E!]{Colores.RESET}: Salida | {Colores.BLANCO}[E?]{Colores.RESET}: Posible Salida |")
+        print(f"| {Colores.ROJO_B}[P!]{Colores.RESET}: Precipicio | {Colores.ROJO_B}[S!]{Colores.RESET}: Soldado | {Colores.AMARILLO}[P/S?]{Colores.RESET}: Peligros Posibles |")
+        print(f"| {Colores.MAGENTA}[B/R/L]{Colores.RESET}: Perceptos | {Colores.VERDE}[ok]{Colores.RESET}: Seguro | {Colores.NEGRO}[#]{Colores.RESET}: Desconocido |")
         print("-" * 60)
 
         for r in range(self.n):
@@ -133,38 +153,49 @@ class AgenteLogico:
             for c in range(self.n):
                 pos = (r, c)
                 texto = " # "
+                color = Colores.RESET 
                 
-                # 1. POSICIÓN DEL JUGADOR (Jerarquía máxima)
+                # --- 1. JUGADOR (Prioridad Máxima) ---
                 if pos == pos_capitan:
                     texto = "CW+K" if self.tengo_a_kurtz else "CW"
+                    color = Colores.CYAN_B if self.tengo_a_kurtz else Colores.AZUL_B
                 
-                # 2. OBJETIVOS CONFIRMADOS
+                # --- 2. CERTEZAS (Objetos confirmados) ---
                 elif self.salida_segura == pos: 
-                    texto = "E!" 
-
-                # 3. PELIGROS CONFIRMADOS (Deducidos)
+                    texto = "E!"
+                    color = Colores.BLANCO_B # CAMBIO: Blanco Brillante (Luz)
                 elif pos in self.pozos_seguros:
                     texto = "P!"
+                    color = Colores.ROJO_B
                 elif pos in self.soldado_seguro:
                     texto = "S!"
+                    color = Colores.ROJO_B
 
-                # 4. INCERTIDUMBRES (Si hemos visto luz, mostramos E?)
-                elif self.ha_visto_luz and pos in self.salida_posible:
-                    # Conflictos de información (¿Puede ser pozo y salida a la vez?)
-                    if pos in self.pozos_posibles:
-                        texto = "P/E?"
-                    elif pos in self.soldado_posible:
-                        texto = "S/E?"
+                # --- 3. INCERTIDUMBRES Y POSIBILIDADES (El arreglo clave) ---
+                # Verificamos si la casilla es candidata a ALGO (Pozo, Soldado o Salida)
+                elif (pos in self.pozos_posibles or 
+                      pos in self.soldado_posible or 
+                      (self.ha_visto_luz and pos in self.salida_posible)):
+                    
+                    # Construimos una lista de posibilidades para esta celda
+                    posibilidades = []
+                    if pos in self.pozos_posibles: posibilidades.append("P")
+                    if pos in self.soldado_posible: posibilidades.append("S")
+                    if self.ha_visto_luz and pos in self.salida_posible: posibilidades.append("E")
+                    
+                    # Generamos el texto combinado (Ej: "P/S?")
+                    if len(posibilidades) == 3:
+                        texto = "All?" # Si puede ser todo, abreviamos
                     else:
-                        texto = "E?"
+                        texto = "/".join(posibilidades) + "?"
+                    
+                    # Lógica de Color para incertidumbre
+                    if "P" in posibilidades or "S" in posibilidades:
+                        color = Colores.AMARILLO # Si hay peligro posible -> Amarillo
+                    else:
+                        color = Colores.BLANCO # Si solo es posible salida -> Blanco normal
                 
-                # 5. SOSPECHAS DE PELIGRO
-                elif pos in self.pozos_posibles:
-                    texto = "P?"
-                elif pos in self.soldado_posible:
-                    texto = "S?"
-                
-                # 6. MEMORIA DE CASILLAS VISITADAS (Perceptos históricos)
+                # --- 4. MEMORIA / PERCEPTOS ---
                 elif pos in self.casillas_visitadas:
                     info = []
                     if pos in self.brisas: info.append("B")
@@ -172,21 +203,26 @@ class AgenteLogico:
                     if pos in self.resplandores: info.append("L")
                     
                     if not info: 
-                        texto = "ok" # Sin perceptos, totalmente segura
+                        texto = "ok"
+                        color = Colores.VERDE
                     else:
-                        texto = "".join(info) # Ej: "BR" (Brisa y Ronquido)
+                        texto = "".join(info)
+                        color = Colores.MAGENTA
 
-                # 7. CASILLAS DEDUCIDAS COMO SEGURAS (Pero no visitadas)
+                # --- 5. SEGURAS DEDUCIDAS ---
                 elif pos in self.casillas_seguras:
                     texto = "ok"
+                    color = Colores.VERDE
+
+                # Renderizado
+                celda_formateada = f"[{texto:^4}]"
+                fila_str += f"{color}{celda_formateada}{Colores.RESET}"
                 
-                fila_str += f"[{texto:^4}]"
             print(fila_str)
         
-        # Mensajes de estado debajo del mapa
         if self.salida_segura:
-            print(f"-> ¡DEDUCCIÓN: La salida ESTÁ en {self.salida_segura}!")
+            print(f"-> {Colores.BLANCO_B}¡DEDUCCIÓN: La salida ESTÁ en {self.salida_segura}!{Colores.RESET}")
         elif self.ha_visto_luz:
-            print(f"-> Pista de Luz encontrada. Candidatos a Salida: {len(self.salida_posible)}")
+            print(f"-> {Colores.BLANCO}Pista de Luz encontrada.{Colores.RESET} Candidatos a Salida: {len(self.salida_posible)}")
         
         print("------------------------------\n")
