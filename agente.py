@@ -1,7 +1,9 @@
 import numpy as np
 from collections import deque
+import random
 
 class Colores:
+    # Colores base ANSI
     RESET = "\033[0m"
     NEGRO = "\033[30m"
     ROJO = "\033[31m"
@@ -11,6 +13,8 @@ class Colores:
     MAGENTA = "\033[35m"
     CYAN = "\033[36m"
     BLANCO = "\033[37m"
+    
+    # Variantes brillantes
     ROJO_B = "\033[1;31m"
     VERDE_B = "\033[1;32m"
     AMARILLO_B = "\033[1;33m"
@@ -18,6 +22,11 @@ class Colores:
     MAGENTA_B = "\033[1;35m"
     CYAN_B = "\033[1;36m"
     BLANCO_B = "\033[1;37m"
+    
+    # --- COLORES SEMÁNTICOS (PARTE 2) ---
+    COLOR_PINCHOS = "\033[90m"  # Gris Oscuro
+    COLOR_DARDOS = "\033[35m"   # Morado/Magenta
+    COLOR_SOLDADO = "\033[36m"  # Cyan (Distinto del verde seguro)
 
 class AgenteLogico:
     def __init__(self, size=6):
@@ -25,16 +34,18 @@ class AgenteLogico:
         # Memoria
         self.casillas_visitadas = set()
         self.casillas_seguras = set()
+        
         self.brisas = set()
         self.ronquidos = set()
         self.resplandores = set()
-        self.ha_visto_luz = False
+        self.ha_visto_luz = False 
         
-        # Deducciones
         self.pozos_posibles = set()
         self.pozos_seguros = set()
+        
         self.soldado_posible = set()
         self.soldado_seguro = set()
+
         self.salida_posible = set((r, c) for r in range(size) for c in range(size))
         self.salida_segura = None 
         
@@ -128,8 +139,7 @@ class AgenteLogico:
         Retorna: 'w', 'a', 's', 'd', 'e', 'g...', o None (si está atascado)
         """
         
-        # 1. ¿Tengo que matar al soldado? (Prioridad de Supervivencia)
-        # Si hay un soldado confirmado al lado, lanzamos granada.
+        # 1. Si hay un soldado confirmado al lado, lanzamos granada.
         adyacentes = self._obtener_adyacentes(*pos_actual)
         for vecino in adyacentes:
             if vecino in self.soldado_seguro:
@@ -144,30 +154,15 @@ class AgenteLogico:
 
         # 2. Definir OBJETIVO
         meta = None
-        tipo_meta = ""
-
-        # A) Si tengo a Kurtz -> Voy a la Salida
         if self.tengo_a_kurtz:
             if self.salida_segura:
                 meta = self.salida_segura
-                tipo_meta = "SALIDA"
-            else:
-                # Tengo a Kurtz pero no sé dónde está la salida -> Explorar
-                tipo_meta = "EXPLORAR (Con Kurtz)"
-        
-        # B) Si no tengo a Kurtz -> Voy a por Kurtz (si sé dónde está)
         elif self.kurtz_ubicacion_conocida:
             meta = self.kurtz_ubicacion_conocida
-            tipo_meta = "RESCATAR KURTZ"
-            
-        # C) Si no tengo meta clara -> EXPLORAR (Buscar casilla segura no visitada)
-        if meta is None:
-            tipo_meta = "EXPLORAR"
-            # La meta será determinada por el algoritmo (la más cercana)
+
 
         # 3. Ejecutar Algoritmo de Búsqueda
         siguiente_casilla = None
-        
         if algoritmo == "BFS":
             siguiente_casilla = self._busqueda_bfs(pos_actual, meta)
         elif algoritmo == "DFS":
@@ -175,10 +170,9 @@ class AgenteLogico:
 
         # 4. Traducir casilla a acción
         if siguiente_casilla:
-            # Si la siguiente casilla es la salida y tengo a Kurtz, SALIR
             if siguiente_casilla == pos_actual and self.tengo_a_kurtz and pos_actual == self.salida_segura:
                 return 'e'
-            if siguiente_casilla == pos_actual: # Ya estoy en la meta (ej. acabamos de llegar a la salida)
+            if siguiente_casilla == pos_actual: 
                  return 'e' if (pos_actual == self.salida_segura and self.tengo_a_kurtz) else None
 
             dr = siguiente_casilla[0] - pos_actual[0]
@@ -212,7 +206,6 @@ class AgenteLogico:
                 if actual == meta_concreta: es_meta = True
             else:
                 # Modo Exploración: La meta es cualquier casilla segura no visitada
-                # OJO: Excluimos la propia casilla inicial
                 if actual not in self.casillas_visitadas and actual in self.casillas_seguras:
                     es_meta = True
 
@@ -224,7 +217,7 @@ class AgenteLogico:
             # Expansión (Solo por casillas SEGURAS)
             for vecino in self._obtener_adyacentes(*actual):
                 if vecino not in visitados_bfs:
-                    # REGLA DE ORO: Solo transitamos por casillas confirmadas como seguras
+                    # Solo transitamos por casillas confirmadas como seguras
                     if vecino in self.casillas_seguras:
                         visitados_bfs.add(vecino)
                         cola.append((vecino, camino + [vecino]))
@@ -232,7 +225,9 @@ class AgenteLogico:
 
     def _busqueda_dfs(self, inicio, meta_concreta=None):
         """
-        Búsqueda en Profundidad. Menos óptima, pero cumple requisitos académicos.
+        Búsqueda en Profundidad. Menos óptima.
+
+        PUEDE DAR LUGAR A BUCLES SIN SALIDA
         """
         pila = [(inicio, [])]
         visitados_dfs = {inicio}
@@ -251,7 +246,6 @@ class AgenteLogico:
                 if not camino: return actual
                 return camino[0]
 
-            # En DFS el orden de expansión afecta mucho al camino.
             for vecino in self._obtener_adyacentes(*actual):
                 if vecino not in visitados_dfs:
                     if vecino in self.casillas_seguras:
@@ -267,8 +261,6 @@ class AgenteLogico:
         if tiene_kurtz: 
             self.kurtz_ubicacion_conocida = pos_capitan # Ya va con nosotros
         elif not self.kurtz_ubicacion_conocida and pos_capitan in self.casillas_visitadas:
-             # Nota: La lógica real de encontrar a Kurtz viene del entorno, 
-             # pero aquí asumimos que si visitamos una celda segura y no morimos, la exploramos.
              pass
 
         print("\n--- MAPA MENTAL (Deducción + Búsqueda) ---")
