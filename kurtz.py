@@ -1,9 +1,13 @@
 from entorno import Palacio
 from entorno_bayesiano import PalacioBayesiano
+from entorno_rio import RioMDP
 from agente import AgenteLogico, Colores
 from agente_bayesiano import AgenteBayesiano
+from agente_mdp import AgenteMDP
 import sys
 import time
+import os
+import numpy as np
 
 def interpretar_perceptos_logicos(p):
     """Traduce los perceptos booleanos de la Parte 1 a texto coloreado."""
@@ -115,8 +119,8 @@ def loop_parte1_logica():
                     print("☠️ " * 10 + f"{Colores.RESET}\n")
 
 def loop_parte2_bayesiana():
-    """Ejecuta el bucle de juego de la Parte 2 (Inferencia Bayesiana)."""
-    print(f"\n{Colores.MAGENTA_B}--- PARTE 2: INFERENCIA BAYESIANA ---{Colores.RESET}")
+    """Ejecuta el bucle de juego de la Parte 2.1 (Inferencia Bayesiana)."""
+    print(f"\n{Colores.MAGENTA_B}--- PARTE 2.1: EL PALACIO BAYESIANO ---{Colores.RESET}")
     print("El Capitán Willard usa estadística para sobrevivir.")
     
     print("Selecciona el modo de control:")
@@ -136,7 +140,7 @@ def loop_parte2_bayesiana():
         
         # 2. Actualizar creencias (Bayes)
         cerebro.actualizar_creencias(juego.pos_capitan, perceptos)
-        cerebro.tengo_a_kurtz = juego.kurtz_encontrado # Sincronizar estado Kurtz
+        cerebro.tengo_a_kurtz = juego.kurtz_encontrado
         
         # 3. Visualizar
         cerebro.imprimir_heatmap(juego.pos_capitan)
@@ -167,7 +171,7 @@ def loop_parte2_bayesiana():
         else:
             # --- MODO AUTOMÁTICO ---
             print(f"{Colores.CYAN}El Capitán está calculando riesgos...{Colores.RESET}")
-            time.sleep(0.8) # Pausa dramática
+            time.sleep(0.8)
             
             accion_final = cerebro.decidir_accion_automatica(juego.pos_capitan)
             
@@ -188,17 +192,113 @@ def loop_parte2_bayesiana():
                 else:
                     print(f"\n{Colores.ROJO_B}☠️ HAS MUERTO ☠️{Colores.RESET}\n")
 
+def loop_parte2_rio():
+    """Ejecuta el bucle de juego de la Parte 2.2 (MDP y Value Iteration)."""
+    print(f"\n{Colores.CYAN}--- PARTE 2.2: CRUZANDO EL RÍO (MDP) ---{Colores.RESET}")
+    print("Generando entorno estocástico...")
+    
+    # 1. Crear entorno
+    rio = RioMDP(rows=6, cols=6)
+    rio.print_grid(rio.start)
+    
+    # 2. Inicializar Agente y Resolver MDP
+    print(f"{Colores.AMARILLO}El Capitán está analizando las corrientes (Value Iteration)...{Colores.RESET}")
+    cerebro = AgenteMDP(rio)
+    cerebro.value_iteration(gamma=0.9)
+    
+    print("\n--- POLÍTICA ÓPTIMA CALCULADA ---")
+    for r in range(rio.rows):
+        row_str = ""
+        for c in range(rio.cols):
+            s = (r, c)
+            if s == rio.exit: symb = "EXIT"
+            elif s in rio.islands: symb = "####"
+            else:
+                act = cerebro.policy[s]
+                # Flechas para visualizar mejor la política
+                if act == 'up': symb = " ^ "
+                elif act == 'down': symb = " v "
+                elif act == 'left': symb = " < "
+                elif act == 'right': symb = " > "
+                elif act == 'stay': symb = " o "
+                else: symb = " ? "
+            row_str += f"[{symb:^4}]"
+        print(row_str)
+    
+    # 3. Simulación de Partida
+    print(f"\n{Colores.VERDE}--- INICIANDO CRUCE ---{Colores.RESET}")
+    input("Pulsa Enter para comenzar la simulación...")
+    
+    state = rio.start
+    steps = 0
+    total_reward = 0
+    
+    while state != rio.exit and steps < 50:
+        # Visualizar (Limpiar pantalla para efecto animación)
+        os.system('cls' if os.name == 'nt' else 'clear') 
+        print(f"\nPasos: {steps} | Recompensa Acumulada: {total_reward}")
+        rio.print_grid(state)
+        
+        # Decidir
+        action = cerebro.get_best_action(state)
+        print(f"El Capitán decide: {Colores.AZUL}{action.upper()}{Colores.RESET}")
+        time.sleep(1) 
+        
+        # Ejecutar transición (Estocástica)
+        transitions = rio.get_transitions(state, action)
+        
+        # Elegir siguiente estado según probabilidades
+        probs = [t[0] for t in transitions]
+        indices = range(len(transitions))
+        chosen_idx = np.random.choice(indices, p=probs)
+        
+        prob, next_state, reward = transitions[chosen_idx]
+        
+        # Feedback narrativo si hubo deriva
+        if next_state != state and action != 'stay':
+            # Comprobación simple de deriva (si acabamos más abajo de lo esperado o no nos movimos donde queríamos)
+            # Nota: Esto es simplificado para feedback visual
+            if next_state[0] > state[0] and action != 'down':
+                 print(f"{Colores.ROJO}¡La corriente arrastra al bote hacia el sur!{Colores.RESET}")
+        
+        state = next_state
+        total_reward += reward
+        steps += 1
+        
+        time.sleep(0.5)
+
+    # Final
+    rio.print_grid(state)
+    if state == rio.exit:
+        print(f"\n{Colores.VERDE}🌟 ¡VICTORIA! Willard y Kurtz han cruzado el río a salvo. 🌟{Colores.RESET}\n")
+    else:
+        print(f"\n{Colores.ROJO}☠️ FRACASO: Se acabaron los suministros o el tiempo. ☠️{Colores.RESET}\n")
+
+def menu_parte2():
+    print(f"\n{Colores.VERDE_B}--- PARTE 2: INCERTIDUMBRE ---{Colores.RESET}")
+    print("1. El Palacio (Inferencia Bayesiana)")
+    print("2. El Río (MDP - Value Iteration)")
+    
+    sub_opcion = input(f"{Colores.VERDE_B}Selecciona Escenario (1/2): {Colores.RESET}").strip()
+    
+    if sub_opcion == '1':
+        loop_parte2_bayesiana()
+    elif sub_opcion == '2':
+        loop_parte2_rio()
+    else:
+        print("Opción inválida.")
+
 def main():
     print(f"{Colores.VERDE_B}--- PROYECTO: BUSCANDO AL CORONEL KURTZ ---{Colores.RESET}")
     print("1. Parte 1: El Palacio (Lógica y Búsqueda)")
-    print("2. Parte 2: Incertidumbre (Bayes)")
+    print("2. Parte 2: Incertidumbre (Bayes y MDP)")
     
     opcion = input(f"{Colores.VERDE_B}Selecciona Parte (1/2): {Colores.RESET}").strip()
     
     if opcion == '1':
         loop_parte1_logica()
     elif opcion == '2':
-        loop_parte2_bayesiana()
+        menu_parte2()
     else:
         print("Opción no válida. Saliendo.")
 
