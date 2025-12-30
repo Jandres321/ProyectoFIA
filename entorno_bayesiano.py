@@ -65,7 +65,7 @@ class PalacioBayesiano:
         ady = self._obtener_adyacentes_y_propia(r, c) # Incluye la propia celda
         ady_estricta = self._obtener_adyacentes(r, c)  # Solo vecinos
         
-        # [cite_start]Estímulos de Trampas (Se sienten en vecina Y propia) [cite: 220, 221]
+        # Estímulos de Trampas (Se sienten en vecina Y propia)
         olor_fuego = any(pos == self.pos_fuego for pos in ady)
         crujido_pinchos = any(pos == self.pos_pinchos for pos in ady)
         cable_dardos = any(pos == self.pos_dardos for pos in ady)
@@ -133,10 +133,14 @@ class PalacioBayesiano:
         elif accion == 'a' and c > 0: nc -= 1
         elif accion == 'd' and c < self.n - 1: nc += 1
         elif accion == 'e':
-            if self.pos_capitan == self.pos_salida and self.kurtz_encontrado:
-                self.juego_terminado = True
-                return self.obtener_perceptos(), True, "MISIÓN CUMPLIDA (Bayes)"
-            return self.obtener_perceptos(), False, "No puedes salir aún."
+            if self.pos_capitan == self.pos_salida:
+                if self.kurtz_encontrado:
+                    self.juego_terminado = True
+                    return self.obtener_perceptos(), True, "MISIÓN CUMPLIDA (Bayes)"
+                else:
+                    return self.obtener_perceptos(), False, "¡No puedes irte sin Kurtz! Búscalo primero."
+            else:
+                return self.obtener_perceptos(), False, "Aquí no hay ninguna salida."
         
         self.pos_capitan = (nr, nc)
         
@@ -156,6 +160,6 @@ class PalacioBayesiano:
         msg = "Avanzas..."
         if self.pos_capitan == self.pos_kurtz and not self.kurtz_encontrado:
             self.kurtz_encontrado = True
-            msg = "¡Has encontrado a Kurtz!"
+            msg = "¡HAS ENCONTRADO AL CORONEL KURTZ! Te sigue. ¡Corre a la salida!"
             
         return self.obtener_perceptos(), False, msg

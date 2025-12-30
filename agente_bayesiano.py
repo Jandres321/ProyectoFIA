@@ -267,7 +267,7 @@ class AgenteBayesiano:
 
     def imprimir_heatmap(self, pos_capitan):
         print("\n--- MAPA DE PROBABILIDAD (BAYES) ---")
-        print(f"Leyenda: {Colores.AZUL_B}CW{Colores.RESET}=Tú  {Colores.BLANCO_B}S{Colores.RESET}=Salida  {Colores.VERDE}ok{Colores.RESET}=Seguro")
+        print(f"Leyenda: {Colores.AZUL_B}CW{Colores.RESET}=Tú  {Colores.CYAN_B}CW+K{Colores.RESET}=Con Kurtz  {Colores.BLANCO_B}S{Colores.RESET}=Salida  {Colores.VERDE}ok{Colores.RESET}=Seguro")
         print(f"Genérico: {Colores.AMARILLO}R{Colores.RESET}=Riesgo Total (Fuente desconocida)")
         print(f"Amenazas: {Colores.ROJO}F{Colores.RESET}=Fuego  {Colores.COLOR_PINCHOS}P{Colores.RESET}=Pinchos  {Colores.COLOR_DARDOS}D{Colores.RESET}=Dardos  {Colores.COLOR_SOLDADO}M{Colores.RESET}=Soldado")
         print("-" * 50)
@@ -279,8 +279,13 @@ class AgenteBayesiano:
                 color_celda = Colores.RESET
                 
                 if (r, c) == pos_capitan:
-                    txt_celda = "CW"
-                    color_celda = Colores.AZUL_B
+                    # Si tengo a Kurtz, mostramos CW+K en Cyan Brillante
+                    if self.tengo_a_kurtz:
+                        txt_celda = "CW+K"
+                        color_celda = Colores.CYAN_B
+                    else:
+                        txt_celda = "CW"
+                        color_celda = Colores.AZUL_B
                 else:
                     txt_celda, color_celda = self._analizar_celda(r, c)
                 
