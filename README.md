@@ -25,10 +25,13 @@ El entorno se vuelve estocástico.
 
 ## 📂 Estructura del Repositorio
 
-* `kurtz.py`: Script principal para la Parte 1 (El Palacio). Ejecuta la simulación del agente lógico/búsqueda.
-* `palacio.py`: Clase que modela el entorno del palacio, generación de mapas y perceptos.
-* `river_mdp.py`: Script principal para la Parte 2. Implementación del MDP y Value Iteration para el río.
-* `entorno.py` / `agente.py`: Módulos auxiliares para la lógica del agente y el mundo (según implementación).
+* `kurtz.py`: **Script principal unificado**. Contiene el menú principal para ejecutar tanto la Parte 1 (Lógica) como la Parte 2 (Bayesiana y Río).
+* `entorno.py`: Define la clase `Palacio` (Parte 1), modelando el entorno, los perceptos básicos y las reglas de juego lógicas.
+* `agente.py`: Define la clase `AgenteLogico` (Parte 1), implementando el motor de inferencia proposicional y los algoritmos de búsqueda (BFS/DFS).
+* `entorno_bayesiano.py`: Define la clase `PalacioBayesiano` (Parte 2.1), con trampas específicas e independientes.
+* `agente_bayesiano.py`: Define la clase `AgenteBayesiano` (Parte 2.1), encargada de la inferencia probabilística, actualización de creencias y cálculo de riesgos.
+* `entorno_rio.py`: Define la clase `RioMDP` (Parte 2.2), modelando el río estocástico, corrientes y transiciones.
+* `agente_mdp.py`: Define la clase `AgenteMDP` (Parte 2.2), implementando el algoritmo **Value Iteration** para obtener la política óptima de navegación.
 
 ## 🚀 Instalación y Requisitos
 
