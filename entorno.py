@@ -118,7 +118,7 @@ class Palacio:
                 
             return self.obtener_perceptos(), False, mensaje_turno
 
-        # --- LÓGICA DE MOVIMIENTO (Igual que antes, con pequeña modificación en muerte) ---
+        # --- LÓGICA DE MOVIMIENTO ---
         nueva_r, nueva_c = r, c
         if accion == 'w' and r > 0: nueva_r -= 1
         elif accion == 's' and r < self.n - 1: nueva_r += 1

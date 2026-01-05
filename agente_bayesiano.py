@@ -203,7 +203,7 @@ class AgenteBayesiano:
                 
                 riesgo = self.obtener_riesgo(*v)
                 
-                # REGLA CLAVE: Solo transitamos si el riesgo es aceptable
+                # Solo transitamos si el riesgo es aceptable
                 if riesgo < umbral_riesgo:
                     visitados_algoritmo.add(v)
                     

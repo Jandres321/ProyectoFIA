@@ -20,7 +20,7 @@ class RioMDP:
         exit_row = random.randint(1, self.rows - 2)
         self.exit = (exit_row, self.cols - 1)
 
-        # 2. Generar Corrientes (Source 137-140)
+        # 2. Generar Corrientes
         # Bordes (0 y N-1) tienen fuerza 0. Interiores aleatorio [0.06, 0.94]
         for j in range(self.cols):
             if j == 0 or j == self.cols - 1:
@@ -28,7 +28,7 @@ class RioMDP:
             else:
                 self.currents[j] = round(random.uniform(0.06, 0.94), 2)
 
-        # 3. Generar Islas (Source 108-109)
+        # 3. Generar Islas
         # n_islas = 2. No en primera/última fila. No superpuestas.
         posibles = []
         for r in range(1, self.rows - 1):
@@ -46,13 +46,12 @@ class RioMDP:
         return [(r, c) for r in range(self.rows) for c in range(self.cols)]
 
     def get_actions(self):
-        """Acciones permitidas (Source 120)."""
+        """Acciones permitidas"""
         return ['up', 'down', 'left', 'right', 'stay']
 
     def get_transitions(self, state, action):
         """
         Retorna una lista de tuplas (probabilidad, nuevo_estado, recompensa).
-        Calcula la física del río según Source 128-136.
         """
         if state == self.exit:
             return [] # Estado terminal
@@ -72,14 +71,14 @@ class RioMDP:
 
         # --- LÓGICA DE TRANSICIÓN ---
         
-        # Caso 1: Acción DOWN (Source 130)
+        # Caso 1: Acción DOWN
         # La corriente ayuda, así que la probabilidad es 1.0 hacia abajo.
         if action == 'down':
             next_s = get_valid_next(r + 1, c)
             rew = 100 if next_s == self.exit else -1
             transitions.append((1.0, next_s, rew))
 
-        # Caso 2: STAY (Source 126 implícito o decisión de diseño)
+        # Caso 2: STAY
         # Asumiremos que STAY también sufre deriva si hay corriente, 
         # pero para simplificar y seguir "moves in desired direction", 
         # trataremos STAY como intento de quedarse (P_dir) + arrastre (P_down).
@@ -99,7 +98,7 @@ class RioMDP:
             if p_intent > 0: transitions.append((p_intent, dest_intended, rew_intent))
             if p_drift > 0: transitions.append((p_drift, dest_drift, rew_drift))
 
-        # Caso 3: UP, LEFT, RIGHT (Source 129)
+        # Caso 3: UP, LEFT, RIGHT
         else:
             # Determinar casilla objetivo del movimiento
             tr, tc = r, c
